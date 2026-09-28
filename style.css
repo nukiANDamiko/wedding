@@ -1,0 +1,662 @@
+/* =========================================================
+   ნუკა & ამიკო · 01.10.2026
+   hero photo → sticky video stage → photo collage → ending
+   mobile-first
+   ========================================================= */
+
+/* ---------- 1. TOKENS ---------- */
+:root {
+  /* colour */
+  --cream:      #Faf0c8;
+  --cream-rgb:  250, 240, 200;
+  --ivory:      #FFFDF9;
+  --ivory-rgb:  255, 253, 249;
+  --ink:        #453D38;
+  --ink-70:     rgba(69, 61, 56, 0.76);
+  --ink-50:     rgba(69, 61, 56, 0.50);
+  --ink-20:     rgba(69, 61, 56, 0.20);
+  --rose:       #D9B7B0;
+  --rose-deep:  #B0867D;
+  --sage:       #BCC4AE;
+  --blue:       #B9C8D8;
+  --shade:      48, 36, 24; /* warm dark, for overlays */
+
+  /* type */
+  --font-display: "Noto Serif Georgian", Georgia, "Times New Roman", serif;
+  --font-body:    "Noto Sans Georgian", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-numeral: "Cormorant Garamond", "Noto Serif Georgian", Georgia, serif;
+
+  --fs-micro:  0.68rem;
+  --fs-small:  0.8rem;
+  --fs-body:   clamp(0.95rem, 3.8vw, 1.05rem);
+  --fs-lead:   clamp(1.25rem, 6vw, 1.9rem);
+  --fs-title:  clamp(1.7rem, 7.6vw, 2.5rem);
+  --fs-hero:   clamp(2.9rem, 14vw, 5.5rem);
+
+  --track-wide: 0.26em;
+  --track-mid:  0.14em;
+
+  /* space */
+  --gutter:    clamp(1.5rem, 7vw, 2.5rem);
+  --section-y: clamp(5.5rem, 17vw, 8rem);
+  --measure:   34ch;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --reveal-duration: 900ms;
+}
+
+/* ---------- 2. RESET / BASE ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 300;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+video { display: block; max-width: 100%; }
+
+/* `hidden` must win over the display values set below */
+[hidden] { display: none !important; }
+
+h1, h2, h3, p, figure { margin: 0; }
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 6px;
+  border-radius: 1px;
+}
+
+/* ---------- 3. FILM GRAIN ---------- */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.085;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 170px 170px;
+}
+
+/* ---------- 4. SHARED PIECES ---------- */
+.amp {
+  font-family: var(--font-numeral);
+  font-style: italic;
+  font-weight: 300;
+  padding-inline: 0.28em;
+  opacity: 0.85;
+}
+
+/* very light film treatment — the photos stay natural */
+.hero__image,
+.shot img,
+.stage__video {
+  filter: saturate(0.92) contrast(0.96) brightness(1.01) sepia(0.05);
+}
+
+/* editorial text link */
+.link-arrow {
+  display: inline-block;
+  font-size: var(--fs-small);
+  font-weight: 400;
+  letter-spacing: var(--track-mid);
+  text-decoration: none;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid currentColor;
+  opacity: 0.82;
+  transition: opacity 350ms var(--ease-out);
+}
+
+.link-arrow__mark { padding-left: 0.2em; }
+
+.link-arrow:hover { opacity: 1; }
+
+/* ---------- 5. MUSIC CONTROL ---------- */
+.music-toggle {
+  position: fixed;
+  z-index: 70;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--ink-20);
+  border-radius: 1px;
+  background-color: rgba(var(--ivory-rgb), 0.86);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  letter-spacing: var(--track-mid);
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 350ms var(--ease-out);
+}
+
+.music-toggle:hover { border-color: var(--ink-50); }
+
+.music-toggle__note { font-size: 0.85em; opacity: 0.8; }
+
+.music-toggle[aria-pressed="true"] .music-toggle__note { opacity: 1; }
+
+/* ---------- 6. HERO ---------- */
+.hero {
+  position: relative;
+  min-height: 34rem;
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  align-content: end;
+}
+
+.hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 53% 50%;
+  transform-origin: 53% 45%;
+  animation: hero-drift 24s var(--ease-out) forwards;
+}
+
+@keyframes hero-drift {
+  from { transform: scale(1); }
+  to   { transform: scale(1.04); }
+}
+
+.hero__veil {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(var(--shade), 0.34) 0%,
+    rgba(var(--shade), 0.10) 30%,
+    rgba(var(--shade), 0.20) 55%,
+    rgba(var(--shade), 0.46) 78%,
+    rgba(var(--shade), 0.68) 100%
+  );
+}
+
+.hero__content {
+  position: relative;
+  padding: 0 var(--gutter) clamp(8.5rem, 28vw, 10rem);
+  text-align: center;
+  color: var(--ivory);
+  text-shadow: 0 1px 24px rgba(40, 30, 24, 0.35);
+}
+
+.hero__names {
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  font-weight: 200;
+  line-height: 1.08;
+  letter-spacing: 0.005em;
+}
+
+.hero__date {
+  margin-top: clamp(1rem, 4.5vw, 1.4rem);
+  font-family: var(--font-numeral);
+  font-size: clamp(1rem, 4.4vw, 1.2rem);
+  font-weight: 400;
+  letter-spacing: 0.32em;
+  font-variant-numeric: lining-nums;
+  opacity: 0.9;
+}
+
+.hero__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: max(2.2rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  color: var(--ivory);
+  text-decoration: none;
+}
+
+.hero__scroll-word {
+  font-size: var(--fs-micro);
+  letter-spacing: var(--track-wide);
+  opacity: 0.8;
+}
+
+.hero__scroll-line {
+  width: 1px;
+  height: 2.4rem;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(var(--ivory-rgb), 0.85),
+    rgba(var(--ivory-rgb), 0)
+  );
+  animation: scroll-cue 2.8s var(--ease-out) infinite;
+}
+
+@keyframes scroll-cue {
+  0%   { transform: scaleY(0.4); transform-origin: top; opacity: 0.25; }
+  45%  { transform: scaleY(1);   transform-origin: top; opacity: 0.9; }
+  100% { transform: scaleY(1);   transform-origin: bottom; opacity: 0; }
+}
+
+/* ---------- 7. VIDEO STAGE ----------
+   One sticky 100svh media layer; .stage__content is pulled back over it
+   with a negative margin and scrolls on top. Sticky (not fixed) because
+   iOS Safari resizes the viewport as its toolbars collapse, which makes
+   position:fixed backgrounds jump. */
+.stage {
+  position: relative;
+  background-color: rgba(var(--shade), 1);
+}
+
+.stage__media {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.stage__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 38%;
+}
+
+/* still readable, but the sunset colours stay */
+.stage__veil {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(var(--shade), 0.30) 0%,
+    rgba(var(--shade), 0.24) 20%,
+    rgba(var(--shade), 0.52) 48%,
+    rgba(var(--shade), 0.52) 58%,
+    rgba(var(--shade), 0.24) 82%,
+    rgba(var(--shade), 0.34) 100%
+  );
+}
+
+/* if the clip cannot be decoded, the stage keeps a warm wash
+   so the text over it is still readable */
+.stage--no-video .stage__media {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(90, 60, 42, 1) 0%,
+    rgba(120, 78, 52, 1) 45%,
+    rgba(86, 58, 44, 1) 100%
+  );
+}
+
+/* soft hand-over at both ends of the stage */
+.stage__fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.stage__fade--top {
+  top: 0;
+  height: 26svh;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(var(--shade), 0.85) 0%,
+    rgba(var(--shade), 0) 100%
+  );
+}
+
+.stage__fade--bottom {
+  bottom: 0;
+  height: 34svh;
+  background-image: linear-gradient(
+    to top,
+    rgba(var(--cream-rgb), 1) 0%,
+    rgba(var(--cream-rgb), 0.82) 26%,
+    rgba(var(--cream-rgb), 0) 100%
+  );
+}
+
+.stage__content {
+  position: relative;
+  z-index: 2;
+  margin-top: -100svh;
+  color: var(--ivory);
+  text-shadow:
+    0 1px 3px rgba(20, 14, 10, 0.55),
+    0 2px 20px rgba(20, 14, 10, 0.7);
+}
+
+/* every panel over the video gets a full screen of breathing room */
+.stage__content > section {
+  min-height: 100svh;
+  padding: var(--section-y) var(--gutter);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+/* — a few warm words — */
+.say__line {
+  max-width: 18ch;
+  font-family: var(--font-display);
+  font-size: var(--fs-lead);
+  font-weight: 300;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* — day schedule — */
+.schedule { gap: clamp(2.6rem, 10vw, 3.4rem); }
+
+.event {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.event__time {
+  font-family: var(--font-numeral);
+  font-size: clamp(2.4rem, 11vw, 3rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: lining-nums;
+}
+
+.event__name {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 4.6vw, 1.25rem);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+
+.event .link-arrow { margin-top: 0.9rem; }
+
+.schedule__divider {
+  width: min(100%, 18rem);
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    rgba(var(--ivory-rgb), 0) 0%,
+    rgba(var(--ivory-rgb), 0.55) 50%,
+    rgba(var(--ivory-rgb), 0) 100%
+  );
+}
+
+/* — countdown — */
+.countdown { gap: clamp(2.4rem, 9vw, 3.2rem); }
+
+.countdown__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.countdown__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  width: min(100%, 34rem);
+}
+
+.unit {
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  padding-inline: 0.3rem;
+}
+
+.unit + .unit { border-left: 1px solid rgba(var(--ivory-rgb), 0.35); }
+
+.unit__value {
+  font-family: var(--font-numeral);
+  font-size: clamp(2.9rem, 15vw, 5rem);
+  font-weight: 300;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+
+.unit__label {
+  font-size: var(--fs-micro);
+  letter-spacing: var(--track-wide);
+  opacity: 0.82;
+}
+
+.countdown__message {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 5.4vw, 1.6rem);
+  font-weight: 200;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* ---------- 8. PHOTO COLLAGE ---------- */
+.collage {
+  padding: clamp(3rem, 10vw, 5rem) var(--gutter) var(--section-y);
+  display: grid;
+  justify-items: center;
+  gap: clamp(2.5rem, 10vw, 4rem);
+}
+
+.collage__intro {
+  font-family: var(--font-display);
+  font-size: var(--fs-small);
+  font-weight: 300;
+  letter-spacing: var(--track-mid);
+  text-align: center;
+  color: var(--ink-70);
+}
+
+.collage__spread {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: start;
+  width: 100%;
+  max-width: 30rem;
+}
+
+/* printed photo — thin ivory mount, whisper of a shadow */
+.shot {
+  --rot: 0deg;
+  position: relative;
+  padding: 0.4rem;
+  background-color: var(--ivory);
+  box-shadow:
+    0 1px 2px rgba(69, 61, 56, 0.08),
+    0 16px 30px -22px rgba(69, 61, 56, 0.5);
+  transform: rotate(var(--rot));
+}
+
+.shot img {
+  width: 100%;
+  height: auto;
+}
+
+/* scattered, but on a grid so it cannot fall apart between phone sizes */
+.shot--1 { --rot: -2deg;   grid-column: 1 / 10;  z-index: 2; }
+.shot--2 { --rot: 2.4deg;  grid-column: 7 / 13;  z-index: 3; margin-top: -30vw; }
+.shot--3 { --rot: -1deg;   grid-column: 1 / 8;   z-index: 4; margin-top: -20vw; }
+.shot--4 { --rot: 2deg;    grid-column: 6 / 13;  z-index: 5; margin-top: -26vw; }
+.shot--5 { --rot: -2.6deg; grid-column: 2 / 9;   z-index: 6; margin-top: -22vw; }
+.shot--6 { --rot: 1.6deg;  grid-column: 7 / 13;  z-index: 7; margin-top: -30vw; }
+.shot--7 { --rot: -1.4deg; grid-column: 1 / 10;  z-index: 8; margin-top: -24vw; }
+
+/* ---------- 9. ENDING ---------- */
+.ending {
+  padding: var(--section-y) var(--gutter) clamp(7rem, 22vw, 9rem);
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.1rem, 5vw, 1.5rem);
+  text-align: center;
+}
+
+.ending__word {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 9vw, 2.8rem);
+  font-weight: 200;
+  letter-spacing: 0.06em;
+}
+
+.ending__names {
+  margin-top: clamp(0.8rem, 4vw, 1.4rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+
+.ending__date {
+  font-family: var(--font-numeral);
+  font-size: var(--fs-small);
+  letter-spacing: 0.34em;
+  font-variant-numeric: lining-nums;
+  color: var(--ink-70);
+}
+
+.ending__heart {
+  margin-top: clamp(1.4rem, 6vw, 2rem);
+  font-size: 1rem;
+  color: var(--rose-deep);
+}
+
+/* ---------- 10. REVEAL ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity var(--reveal-duration) var(--ease-out),
+    transform var(--reveal-duration) var(--ease-out);
+  transition-delay: var(--d, 0ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* the collage keeps its rotation through the reveal */
+.shot.reveal { transform: translateY(20px) rotate(var(--rot)); }
+.shot.reveal.is-visible { transform: rotate(var(--rot)); }
+
+@media (scripting: none) {
+  .reveal { opacity: 1; transform: none; }
+  .shot.reveal { transform: rotate(var(--rot)); }
+}
+
+/* ---------- 11. TABLET — 40rem / 640px ---------- */
+@media (min-width: 40rem) {
+  :root {
+    --gutter: clamp(2.5rem, 7vw, 4rem);
+    --section-y: clamp(8rem, 13vw, 10rem);
+  }
+
+  .hero__image { object-position: 52% 46%; }
+
+  .stage__video { object-position: 50% 36%; }
+
+  .collage__spread { max-width: 38rem; }
+
+  .shot--2 { margin-top: -22vw; }
+  .shot--3 { margin-top: -15vw; }
+  .shot--4 { margin-top: -19vw; }
+  .shot--5 { margin-top: -16vw; }
+  .shot--6 { margin-top: -22vw; }
+  .shot--7 { margin-top: -18vw; }
+}
+
+/* ---------- 12. DESKTOP — 64rem / 1024px ---------- */
+@media (min-width: 64rem) {
+  :root {
+    --section-y: clamp(9rem, 11vw, 12rem);
+    --fs-body: 1.05rem;
+  }
+
+  .hero__image { object-position: 50% 38%; }
+  .hero__content { padding-bottom: clamp(9rem, 14vh, 11rem); }
+  .hero__names { font-size: clamp(3.6rem, 5.4vw, 5.4rem); }
+
+  .stage__video { object-position: 50% 30%; }
+
+  .schedule {
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(3rem, 7vw, 5rem);
+  }
+
+  .schedule__divider {
+    width: 1px;
+    height: 7rem;
+    background-image: linear-gradient(
+      to bottom,
+      rgba(var(--ivory-rgb), 0) 0%,
+      rgba(var(--ivory-rgb), 0.55) 50%,
+      rgba(var(--ivory-rgb), 0) 100%
+    );
+  }
+
+  .countdown__grid { width: 30rem; }
+
+  /* the collage gets room to spread sideways, but stays a pile */
+  .collage__spread { max-width: 54rem; }
+
+  .shot--1 { grid-column: 1 / 6;   margin-top: 0; }
+  .shot--2 { grid-column: 5 / 9;   margin-top: -13rem; }
+  .shot--3 { grid-column: 8 / 13;  margin-top: -19rem; }
+  .shot--4 { grid-column: 2 / 6;   margin-top: -13rem; }
+  .shot--5 { grid-column: 5 / 10;  margin-top: -17rem; }
+  .shot--6 { grid-column: 9 / 13;  margin-top: -12rem; }
+  .shot--7 { grid-column: 3 / 8;   margin-top: -15rem; }
+}
+
+/* ---------- 13. LARGE DESKTOP — 90rem / 1440px ---------- */
+@media (min-width: 90rem) {
+  :root { --section-y: 13rem; }
+  .collage__spread { max-width: 58rem; }
+}
+
+/* ---------- 14. REDUCED MOTION ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .shot.reveal { transform: rotate(var(--rot)); }
+
+  .hero__image { animation: none; }
+  .hero__scroll-line { animation: none; opacity: 0.6; }
+}
