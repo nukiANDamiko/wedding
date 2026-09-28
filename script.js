@@ -264,7 +264,7 @@
           video.pause();
         }
       });
-    }, { threshold: 0 });
+    }, { rootMargin: "300px 0px", threshold: 0 });
 
     observer.observe(stage);
   }
